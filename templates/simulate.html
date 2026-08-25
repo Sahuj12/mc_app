@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}New Simulation - Monte Carlo Studio{% endblock %}
+{% block content %}
+<h1>New simulation</h1>
+<p class="muted">Geometric Brownian Motion Monte Carlo simulation. All values are your own assumptions —
+the tool does not validate real-world plausibility, only that inputs are well-formed (see input limits below).</p>
+
+<form method="POST" action="{{ url_for('simulate.run') }}" enctype="multipart/form-data" id="sim-form" novalidate>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Required parameters</h3>
+
+      <div class="field {{ 'has-error' if errors.initial_price }}">
+        <div class="field-row">
+          <label for="initial_price">Initial price</label>
+          <span class="tip">?<span class="tip-bubble">The starting value of the asset at time zero (e.g. current stock price). Must be positive.</span></span>
+        </div>
+        <input type="number" step="any" id="initial_price" name="initial_price"
+               value="{{ form_values.initial_price or 100 }}" min="{{ config.MIN_INITIAL_PRICE }}" max="{{ config.MAX_INITIAL_PRICE }}" required>
+        {% if errors.initial_price %}<div class="field-error">{{ errors.initial_price }}</div>{% endif %}
+      </div>
+
+      <div class="field {{ 'has-error' if errors.drift }}">
+        <div class="field-row">
+          <label for="drift">Expected return (drift), annualized</label>
+          <span class="tip">?<span class="tip-bubble">Annualized expected/mean return, as a decimal (0.07 = 7% per year). Can be negative.</span></span>
+        </div>
+        <input type="number" step="any" id="drift" name="drift" value="{{ form_values.drift or 0.07 }}"
+               min="{{ config.MIN_DRIFT }}" max="{{ config.MAX_DRIFT }}" required>
+        {% if errors.drift %}<div class="field-error">{{ errors.drift }}</div>{% endif %}
+      </div>
+
+      <div class="field {{ 'has-error' if errors.volatility }}">
+        <div class="field-row">
+          <label for="volatility">Volatility, annualized</label>
+          <span class="tip">?<span class="tip-bubble">Annualized standard deviation of returns, as a decimal (0.2 = 20% per year).</span></span>
+        </div>
+        <input type="number" step="any" id="volatility" name="volatility" value="{{ form_values.volatility or 0.2 }}"
+               min="{{ config.MIN_VOLATILITY }}" max="{{ config.MAX_VOLATILITY }}" required>
+        {% if errors.volatility %}<div class="field-error">{{ errors.volatility }}</div>{% endif %}
+      </div>
+
+      <div class="field {{ 'has-error' if errors.time_horizon_years }}">
+        <div class="field-row">
+          <label for="time_horizon_years">Time horizon (years)</label>
+          <span class="tip">?<span class="tip-bubble">How far into the future to simulate, in years (e.g. 1 = one year of daily steps, 252 trading days).</span></span>
+        </div>
+        <input type="number" step="any" id="time_horizon_years" name="time_horizon_years"
+               value="{{ form_values.time_horizon_years or 1 }}" min="{{ config.MIN_TIME_HORIZON_YEARS }}" max="{{ config.MAX_TIME_HORIZON_YEARS }}" required>
+        {% if errors.time_horizon_years %}<div class="field-error">{{ errors.time_horizon_years }}</div>{% endif %}
+      </div>
+
+      <div class="field {{ 'has-error' if errors.num_simulations }}">
+        <div class="field-row">
+          <label for="num_simulations">Number of simulations</label>
+          <span class="tip">?<span class="tip-bubble">How many independent price paths to simulate. Higher counts give smoother, more reliable statistics but take longer to compute. Capped at {{ config.MAX_SIMULATIONS }}.</span></span>
+        </div>
+        <input type="number" step="1" id="num_simulations" name="num_simulations"
+               value="{{ form_values.num_simulations or 2000 }}" min="{{ config.MIN_SIMULATIONS }}" max="{{ config.MAX_SIMULATIONS }}" required>
+        <div class="help-text">Maximum {{ config.MAX_SIMULATIONS }} simulations per run.</div>
+        {% if errors.num_simulations %}<div class="field-error">{{ errors.num_simulations }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Optional parameters</h3>
+
+      <div class="field">
+        <div class="field-row">
+          <label for="random_seed">Random seed (optional)</label>
+          <span class="tip">?<span class="tip-bubble">Fix this to an integer to make the simulation reproducible. Leave blank for a different random outcome each run.</span></span>
+        </div>
+        <input type="text" id="random_seed" name="random_seed" value="{{ form_values.random_seed or '' }}" placeholder="e.g. 42">
+        {% if errors.random_seed %}<div class="field-error">{{ errors.random_seed }}</div>{% endif %}
+      </div>
+
+      <div class="field {{ 'has-error' if errors.distribution }}">
+        <div class="field-row">
+          <label for="distribution">Shock distribution</label>
+          <span class="tip">?<span class="tip-bubble">Normal: standard GBM. Student-t: heavier tails (more extreme moves). Bootstrap: resamples from a real historical dataset you provide, rather than assuming a theoretical distribution.</span></span>
+        </div>
+        <select id="distribution" name="distribution" onchange="toggleDistributionFields()">
+          <option value="normal" {{ 'selected' if (form_values.distribution or 'normal') == 'normal' }}>Normal</option>
+          <option value="student_t" {{ 'selected' if form_values.distribution == 'student_t' }}>Student-t (fat tails)</option>
+          <option value="bootstrap" {{ 'selected' if form_values.distribution == 'bootstrap' }}>Bootstrap (historical dataset)</option>
+        </select>
+        {% if errors.distribution %}<div class="field-error">{{ errors.distribution }}</div>{% endif %}
+      </div>
+
+      <div class="field" id="student-t-field">
+        <div class="field-row">
+          <label for="student_t_dof">Degrees of freedom</label>
+          <span class="tip">?<span class="tip-bubble">Lower values (e.g. 3-5) mean fatter tails / more extreme outcomes. Must be greater than 2.</span></span>
+        </div>
+        <input type="number" step="any" id="student_t_dof" name="student_t_dof" value="{{ form_values.student_t_dof or 5 }}">
+        {% if errors.student_t_dof %}<div class="field-error">{{ errors.student_t_dof }}</div>{% endif %}
+      </div>
+
+      <div class="field" id="bootstrap-field">
+        <div class="field-row">
+          <label for="dataset_id">Use a saved dataset</label>
+          <span class="tip">?<span class="tip-bubble">Pick a previously uploaded dataset of historical prices/returns, or upload a new CSV below.</span></span>
+        </div>
+        <select id="dataset_id" name="dataset_id">
+          <option value="">-- none --</option>
+          {% for d in saved_datasets %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.row_count }} returns)</option>
+          {% endfor %}
+        </select>
+        <div class="help-text" style="margin-top:10px;">Or upload a new CSV (a single price column, or a column named "return"/"returns"):</div>
+        <input type="file" id="dataset_file" name="dataset_file" accept=".csv">
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button type="submit" class="btn">Run simulation &rarr;</button>
+  </div>
+</form>
+
+<script>
+function toggleDistributionFields() {
+  var dist = document.getElementById('distribution').value;
+  document.getElementById('student-t-field').style.display = (dist === 'student_t') ? 'block' : 'none';
+  document.getElementById('bootstrap-field').style.display = (dist === 'bootstrap') ? 'block' : 'none';
+}
+document.addEventListener('DOMContentLoaded', toggleDistributionFields);
+</script>
+{% endblock %}

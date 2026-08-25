@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Saved Simulations - Monte Carlo Studio{% endblock %}
+{% block content %}
+<div class="card-title-row">
+  <h1>Saved simulations</h1>
+  <span class="pill">{{ sims|length }} / {{ max_sims }}</span>
+</div>
+
+<div class="card">
+  {% if sims %}
+    <table>
+      <thead><tr><th>Name</th><th>Saved on</th><th></th><th></th></tr></thead>
+      <tbody>
+      {% for s in sims %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td class="muted">{{ s.created_at[:19].replace('T',' ') }}</td>
+          <td><a href="{{ url_for('simulate.view_saved', sim_id=s.id) }}">Open</a></td>
+          <td>
+            <form method="POST" action="{{ url_for('simulate.delete_saved', sim_id=s.id) }}"
+                  onsubmit="return confirm('Delete \'{{ s.name }}\'? This cannot be undone.');">
+              <button type="submit" class="btn btn-danger" style="padding:4px 10px;font-size:0.78rem;">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <p>No saved simulations yet.</p>
+      <a class="btn" href="{{ url_for('simulate.new_simulation') }}">Run your first simulation</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

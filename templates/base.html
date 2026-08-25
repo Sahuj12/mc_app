@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}Monte Carlo Simulator{% endblock %}</title>
+<meta name="viewport" content="width=1024">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="mobile-warning">
+  This tool is designed for desktop browsers. Some features may not work well on small screens.
+</div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark">&#9633;&#9651;</span> Monte&nbsp;Carlo&nbsp;Studio
+    </a>
+    {% if current_user %}
+    <nav class="mainnav">
+      <a href="{{ url_for('simulate.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('simulate.new_simulation') }}">New Simulation</a>
+      <a href="{{ url_for('simulate.saved_list') }}">Saved Runs</a>
+      <a href="{{ url_for('simulate.dataset_list') }}">Datasets</a>
+    </nav>
+    <div class="navright">
+      <span class="user-email">{{ current_user.email }}</span>
+      <a class="btn btn-ghost" href="{{ url_for('auth.logout') }}">Log out</a>
+    </div>
+    {% endif %}
+  </div>
+</header>
+
+<main class="page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <p>Statistical simulation tool for educational and analytical use. Not financial advice.
+     Results depend entirely on the assumptions you enter and are not guaranteed to reflect real markets.</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/tooltips.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

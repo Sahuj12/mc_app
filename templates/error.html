@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }} - Monte Carlo Studio{% endblock %}
+{% block content %}
+<div class="card empty-state">
+  <h1>{{ code }}</h1>
+  <p>{{ message }}</p>
+  <div class="btn-row" style="justify-content:center;">
+    <a class="btn" href="{{ url_for('index') }}">Go home</a>
+  </div>
+</div>
+{% endblock %}

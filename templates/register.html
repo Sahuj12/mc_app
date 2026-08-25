@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Create account - Monte Carlo Studio{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="card">
+    <h1>Create your account</h1>
+    <form method="POST" novalidate>
+      <div class="field {{ 'has-error' if errors and errors.email }}">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ email or '' }}" required autofocus>
+        {% if errors and errors.email %}<div class="field-error">{{ errors.email }}</div>{% endif %}
+      </div>
+      <div class="field {{ 'has-error' if errors and errors.password }}">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+        <div class="help-text">At least 8 characters, mixing upper/lowercase and at least one digit.</div>
+        {% if errors and errors.password %}<div class="field-error">{{ errors.password }}</div>{% endif %}
+      </div>
+      <div class="field {{ 'has-error' if errors and errors.confirm_password }}">
+        <label for="confirm_password">Confirm password</label>
+        <input type="password" id="confirm_password" name="confirm_password" required>
+        {% if errors and errors.confirm_password %}<div class="field-error">{{ errors.confirm_password }}</div>{% endif %}
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn">Create account</button>
+      </div>
+    </form>
+    <hr class="section-divider">
+    <p class="muted">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

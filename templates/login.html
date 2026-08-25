@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Log in - Monte Carlo Studio{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="card">
+    <h1>Log in</h1>
+    <p class="muted" style="margin-top:-8px;">Access your simulations and saved datasets.</p>
+    <form method="POST" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ email or '' }}" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn">Log in</button>
+      </div>
+    </form>
+    <hr class="section-divider">
+    <p><a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a></p>
+    <p class="muted">Don't have an account? <a href="{{ url_for('auth.register') }}">Create one</a></p>
+  </div>
+</div>
+{% endblock %}

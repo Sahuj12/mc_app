@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Monte Carlo Studio - Statistical Simulation for Quant Finance & Data Science{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1 class="hero-title">Monte Carlo Studio</h1>
+  <p class="hero-subtitle">
+    Run Geometric Brownian Motion Monte Carlo simulations on your own price, drift,
+    volatility, and time-horizon assumptions -- with interactive charts, full statistical
+    summaries, and exportable results. Built for analysts, students, and anyone working
+    with quantitative finance or data science.
+  </p>
+  <div class="btn-row" style="justify-content:center; margin-top:24px;">
+    <a class="btn" href="{{ url_for('auth.register') }}">Create free account &rarr;</a>
+    <a class="btn btn-secondary" href="{{ url_for('auth.login') }}">Log in</a>
+  </div>
+  <p class="muted" style="margin-top:14px; font-size:0.8rem;">
+    A statistical analysis tool -- not financial advice. See "What this tool is (and isn't)" below.
+  </p>
+</section>
+
+<section class="grid-3" style="margin-top:48px;">
+  <div class="card feature-card">
+    <h3>Flexible simulation inputs</h3>
+    <p class="muted">
+      Set initial price, expected return, volatility, time horizon, and number of
+      simulations (up to 10,000 paths). Choose Normal, Student-t (fat-tailed), or
+      bootstrap sampling from your own uploaded historical data.
+    </p>
+  </div>
+  <div class="card feature-card">
+    <h3>Charts &amp; statistical summaries</h3>
+    <p class="muted">
+      See sample simulated price paths and the distribution of outcomes, alongside
+      mean, median, standard deviation, skewness, kurtosis, Value-at-Risk, Conditional
+      VaR, and percentile breakdowns -- with outlier paths automatically flagged.
+    </p>
+  </div>
+  <div class="card feature-card">
+    <h3>Save, reopen &amp; export</h3>
+    <p class="muted">
+      Save simulations to revisit later, delete what you don't need, and export
+      results and summaries as CSV or JSON, or charts as PNG -- all encrypted at rest.
+    </p>
+  </div>
+</section>
+
+<section class="card" style="margin-top:32px;">
+  <h2>What this tool is (and isn't)</h2>
+  <p class="muted">
+    Monte Carlo Studio is an analytical and educational tool for exploring how
+    randomness, drift, and volatility shape a distribution of possible outcomes. It
+    validates that your inputs are well-formed, but it cannot judge whether the
+    numbers you enter are realistic for any real-world asset -- that judgment is
+    yours. It reports statistics about the simulation you configured; it does not
+    predict real markets or provide investment, financial, or trading advice.
+  </p>
+</section>
+
+<section class="btn-row" style="justify-content:center; margin-top:32px; margin-bottom:16px;">
+  <a class="btn" href="{{ url_for('auth.register') }}">Get started &rarr;</a>
+</section>
+
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Simulation Results - Monte Carlo Studio{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="card-title-row">
+  <h1>{{ 'Simulation: ' + sim_name if saved else 'Simulation results' }}</h1>
+  <div style="display:flex; align-items:center; gap:8px;">
+      <span class="pill">{{ params.distribution }}</span>
+      <span class="tip">?<span class="tip-bubble">
+        {% if params.distribution == 'normal' %}
+          Standard Geometric Brownian Motion: daily random shocks are drawn from a normal (bell-curve) distribution.
+        {% elif params.distribution == 'student_t' %}
+          Shocks are drawn from a Student-t distribution instead of normal, giving fatter tails -- extreme moves are more likely than a normal distribution would suggest.
+        {% elif params.distribution == 'bootstrap' %}
+          Shocks are resampled directly from real historical returns you uploaded, rather than assumed from a theoretical distribution.
+        {% else %}
+          The random distribution used to generate daily price shocks in this simulation.
+        {% endif %}
+      </span></span>
+    </div>
+</div>
+
+{% if note %}<p class="muted">{{ note }}</p>{% endif %}
+
+<div class="card">
+  <h3>Inputs used</h3>
+  <div class="grid-4">
+    <div class="stat-tile"><div class="stat-label">Initial price</div><div class="stat-value">{{ "%.4f"|format(params.initial_price) }}</div></div>
+    <div class="stat-tile"><div class="stat-label">Drift (annual)</div><div class="stat-value">{{ "%.2f"|format(params.drift * 100) }}%</div></div>
+    <div class="stat-tile"><div class="stat-label">Volatility (annual)</div><div class="stat-value">{{ "%.2f"|format(params.volatility * 100) }}%</div></div>
+    <div class="stat-tile"><div class="stat-label">Horizon</div><div class="stat-value">{{ params.time_horizon_years }} yr</div></div>
+    <div class="stat-tile"><div class="stat-label">Simulations</div><div class="stat-value">{{ "{:,}".format(params.num_simulations) }}</div></div>
+    <div class="stat-tile"><div class="stat-label">Seed</div><div class="stat-value">{{ params.random_seed if params.random_seed is not none else '—' }}</div></div>
+    <div class="stat-tile"><div class="stat-label">Distribution</div><div class="stat-value" style="font-size:1rem;">{{ params.distribution }}</div></div>
+    {% if params.distribution == 'student_t' %}
+    <div class="stat-tile"><div class="stat-label">Degrees of freedom</div><div class="stat-value">{{ params.student_t_dof }}</div></div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Sample simulated price paths</h3>
+    <div class="chart-wrap"><canvas id="pathsChart" height="260"></canvas></div>
+    <p class="help-text">Showing {{ params.num_simulations if saved else 'a sample of the ' + params.num_simulations|string }} simulated paths (subsampled for readability).</p>
+    <p class="narrative-text">{{ narrative.paths }}</p>
+  </div>
+  <div class="card">
+    <h3>Distribution of terminal prices</h3>
+    <div class="chart-wrap"><canvas id="histChart" height="260"></canvas></div>
+    <p class="narrative-text">{{ narrative.histogram }}</p>
+  </div>
+</div>
+
+<div class="card">
+  <h3>What this simulation shows</h3>
+  <p class="narrative-text">{{ narrative.overall }}</p>
+</div>
+
+<div class="card">
+  <h3>Statistical summary</h3>
+  <div class="grid-4">
+    <div class="stat-tile">
+      <div class="stat-label">Mean terminal price
+        <span class="tip">?<span class="tip-bubble">The average final price across all simulated paths at the end of the time horizon.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.4f"|format(summary.mean) }}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Median terminal price
+        <span class="tip">?<span class="tip-bubble">The middle final price: half of all simulated paths ended above this value, half ended below it.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.4f"|format(summary.median) }}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Std. deviation
+        <span class="tip">?<span class="tip-bubble">How spread out the simulated final prices are around the mean. A higher value means simulated outcomes varied more widely.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.4f"|format(summary.std_dev) }}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Min / Max
+        <span class="tip">?<span class="tip-bubble">The lowest and highest final price reached across all simulated paths.</span></span>
+      </div>
+      <div class="stat-value" style="font-size:1rem;">{{ "%.2f"|format(summary.min) }} / {{ "%.2f"|format(summary.max) }}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Mean return
+        <span class="tip">?<span class="tip-bubble">The average percentage change from the initial price to the simulated final price, across all paths.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.2f"|format(summary.mean_return_pct) }}%</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Probability of loss
+        <span class="tip">?<span class="tip-bubble">The percentage of simulated paths that ended below the initial price you entered.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.1f"|format(summary.prob_of_loss * 100) }}%</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Skewness
+        <span class="tip">?<span class="tip-bubble">Measures asymmetry in the outcomes. Positive means a longer tail toward higher prices; negative means a longer tail toward lower prices; near zero means roughly symmetric.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.3f"|format(summary.skewness) }}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Excess kurtosis
+        <span class="tip">?<span class="tip-bubble">Measures how heavy the tails of the distribution are compared to a normal distribution. Higher values mean extreme outcomes were more common in this simulation than a normal bell curve would predict.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.3f"|format(summary.excess_kurtosis) }}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Value at Risk (95%)
+        <span class="tip">?<span class="tip-bubble">The simulated loss (as a % of initial price) that is exceeded in only 5% of simulated outcomes. A statistical description of this simulation's spread, not a prediction or recommendation.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.2f"|format(summary.value_at_risk_95_pct) }}%</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Value at Risk (99%)
+        <span class="tip">?<span class="tip-bubble">The simulated loss (as a % of initial price) that is exceeded in only 1% of simulated outcomes -- a stricter, more extreme threshold than the 95% figure.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.2f"|format(summary.value_at_risk_99_pct) }}%</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-label">Conditional VaR (95%)
+        <span class="tip">?<span class="tip-bubble">The average simulated loss among only the worst 5% of outcomes ("expected shortfall"). This captures how bad the bad cases tend to be on average, not just the cutoff.</span></span>
+      </div>
+      <div class="stat-value">{{ "%.2f"|format(summary.conditional_var_95_pct) }}%</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h3>Percentiles of terminal price
+    <span class="tip">?<span class="tip-bubble">Each column shows the price below which that percentage of simulated outcomes fell. E.g. P25 is the price that 25% of simulations ended below (and 75% ended above).</span></span>
+  </h3>
+  <table>
+    <thead><tr>{% for p in ['p1','p5','p10','p25','p50','p75','p90','p95','p99'] %}<th>{{ p|upper }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      <tr>{% for p in ['p1','p5','p10','p25','p50','p75','p90','p95','p99'] %}<td>{{ "%.3f"|format(summary.percentiles[p]) }}</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3>Save &amp; export</h3>
+  <div class="grid-2">
+    <div>
+      {% if not saved %}
+      <form method="POST" action="{{ url_for('simulate.save_run') }}">
+        <input type="hidden" name="token" value="{{ token }}">
+        <div class="field">
+          <label for="name">Name this simulation</label>
+          <input type="text" id="name" name="name" placeholder="e.g. AAPL 1yr base case" required>
+        </div>
+        <button type="submit" class="btn">Save simulation</button>
+      </form>
+      {% else %}
+        <p class="muted">This simulation is already saved.</p>
+        <form method="POST" action="{{ url_for('simulate.delete_saved', sim_id=sim_id) }}" onsubmit="return confirm('Delete this saved simulation? This cannot be undone.');">
+          <button type="submit" class="btn btn-danger">Delete this saved simulation</button>
+        </form>
+      {% endif %}
+    </div>
+    <div>
+      <label>Export data</label>
+      <div class="btn-row">
+        <a class="btn btn-secondary" href="{{ url_for('export.export_csv', token=token, sim_id=sim_id if saved else none) }}">Export CSV</a>
+        <a class="btn btn-secondary" href="{{ url_for('export.export_json', token=token, sim_id=sim_id if saved else none) }}">Export JSON</a>
+      </div>
+      <label style="margin-top:16px;">Export charts</label>
+      <div class="btn-row">
+        <button type="button" class="btn btn-secondary" onclick="downloadChart('pathsChart','simulated_paths.png')">Paths as PNG</button>
+        <button type="button" class="btn btn-secondary" onclick="downloadChart('histChart','terminal_price_histogram.png')">Histogram as PNG</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <a class="btn btn-ghost" href="{{ url_for('simulate.new_simulation') }}">&larr; Run another simulation</a>
+</div>
+
+<script id="chart-data" type="application/json">{{ chart_payload_json|safe }}</script>
+<script src="{{ url_for('static', filename='js/results.js') }}"></script>
+{% endblock %}

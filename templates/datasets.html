@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Datasets - Monte Carlo Studio{% endblock %}
+{% block content %}
+<div class="card-title-row">
+  <h1>Datasets</h1>
+  <span class="pill">{{ datasets|length }} / {{ max_datasets }}</span>
+</div>
+
+<div class="card">
+  <h3>Upload a new dataset</h3>
+  <p class="muted">CSV with either a single column of historical prices, or a column named "return"/"returns".
+     Used to drive bootstrap-distribution simulations (resampling real historical moves instead of assuming a theoretical distribution).</p>
+  <form method="POST" action="{{ url_for('simulate.upload_dataset') }}" enctype="multipart/form-data">
+    <div class="field">
+      <input type="file" name="dataset_file" accept=".csv" required>
+    </div>
+    <button type="submit" class="btn">Upload</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Your datasets</h3>
+  {% if datasets %}
+    <table>
+      <thead><tr><th>Name</th><th>Observations</th><th>Uploaded</th><th></th></tr></thead>
+      <tbody>
+      {% for d in datasets %}
+        <tr>
+          <td>{{ d.name }}</td>
+          <td class="muted">{{ d.row_count }}</td>
+          <td class="muted">{{ d.created_at[:19].replace('T',' ') }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('simulate.delete_dataset', dataset_id=d.id) }}"
+                  onsubmit="return confirm('Delete dataset \'{{ d.name }}\'? Simulations that reference it will keep their saved results.');">
+              <button type="submit" class="btn btn-danger" style="padding:4px 10px;font-size:0.78rem;">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No datasets uploaded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

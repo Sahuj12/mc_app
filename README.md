@@ -1,15 +1,9 @@
 # Monte Carlo Studio
 
 A working, self-contained Monte Carlo simulation web app for quantitative
-finance / data science use: run GBM-based price simulations with multiple
+finance/data science use: run GBM-based price simulations with multiple
 shock distributions, view interactive charts and statistical summaries,
 save and reopen past runs, and export results.
-
-This is a real, runnable Flask application (not a mockup) — every requirement
-listed in the spec is implemented and was exercised end-to-end during
-development (registration, login/logout, password reset, validation errors,
-bootstrap simulation from an uploaded dataset, save/export/delete, storage
-quotas, session timeout, and encryption at rest all pass automated checks).
 
 ## Quick start
 
